@@ -1,16 +1,18 @@
-version: '3'
 services:
   microservice-a:
     build: ./microservices/microservice-a
+    image: marcelocollyer/microservice-a:v1
     ports:
       - "3000:3000"
 
   microservice-b:
     build: ./microservices/microservice-b
+    image: marcelocollyer/microservice-b:v1
     ports:
       - "8080:8080"
     
   microservice-c:
     build: ./microservices/microservice-c
+    image: marcelocollyer/microservice-c:v1
     ports:
       - "8000:8000"
