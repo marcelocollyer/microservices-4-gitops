@@ -42,11 +42,9 @@ jobs:
 
       - name: Update image tags in Rollout files
         run: |
-          cd infrastructure
-          sed -i "s|marcelocollyer/microservice-a:__TAG__|marcelocollyer/microservice-a:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
-          sed -i "s|marcelocollyer/microservice-b:__TAG__|marcelocollyer/microservice-b:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
-          sed -i "s|marcelocollyer/microservice-c:__TAG__|marcelocollyer/microservice-c:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
-          cat ./apps/rollout.yaml
+          sed -i "s|marcelocollyer/microservice-a:v[0-9]*\.[0-9]*\.[0-9]*.*|marcelocollyer/microservice-a:${{ env.TAG_NAME }}|" ./infrastructure/apps/rollout.yaml
+          sed -i "s|marcelocollyer/microservice-b:v[0-9]*\.[0-9]*\.[0-9]*.*|marcelocollyer/microservice-b:${{ env.TAG_NAME }}|" ./infrastructure/apps/rollout.yaml
+          sed -i "s|marcelocollyer/microservice-c:v[0-9]*\.[0-9]*\.[0-9]*.*|marcelocollyer/microservice-c:${{ env.TAG_NAME }}|" ./infrastructure/apps/rollout.yaml
   
       - name: Commit and push changes
         run: |
@@ -54,10 +52,7 @@ jobs:
           git config --global user.email "marcelocollyer@gmail.com"
           git config --global user.name "GitHub Actions"
           git add .
-          git commit -m "Update rollout files to use new image tags: ${{ env.TAG_NAME }}"
+          git commit -m "[AUTOMATED] Update rollout files to use new image tag: ${{ env.TAG_NAME }}"
           git push origin HEAD:main
           git tag ${{ env.TAG_NAME }}
           git push origin ${{ env.TAG_NAME }}
-
-      - name: Verify changes
-        run: cat ./infrastructure/*.yaml
