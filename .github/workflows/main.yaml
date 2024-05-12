@@ -46,6 +46,7 @@ jobs:
           sed -i "s|marcelocollyer/microservice-a:__TAG__|marcelocollyer/microservice-a:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
           sed -i "s|marcelocollyer/microservice-b:__TAG__|marcelocollyer/microservice-b:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
           sed -i "s|marcelocollyer/microservice-c:__TAG__|marcelocollyer/microservice-c:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
+          cat ./apps/rollout.yaml
   
       - name: Commit and push changes
         run: |
