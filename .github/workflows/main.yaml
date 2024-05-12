@@ -1,0 +1,51 @@
+name: Docker Build and Push
+
+on:
+    push:
+      branches:
+        - main
+      tags:
+        - 'v[0-9]+.[0-9]+.[0-9]+'
+        - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username marcelocollyer --password-stdin
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Extract tag name
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Build and push Docker image for microservice-a
+        uses: docker/build-push-action@v2
+        with:
+          context: ./microservices/microservice-a
+          file: ./microservices/microservice-a/Dockerfile
+          push: true
+          tags: marcelocollyer/microservice-a:${{ env.TAG_NAME }}
+
+      - name: Build and push Docker image for microservice-b
+        uses: docker/build-push-action@v2
+        with:
+          context: ./microservices/microservice-b
+          file: ./microservices/microservice-b/Dockerfile
+          push: true
+          tags: marcelocollyer/microservice-b:${{ env.TAG_NAME }}
+
+      - name: Build and push Docker image for microservice-c
+        uses: docker/build-push-action@v2
+        with:
+          context: ./microservices/microservice-c
+          file: ./microservices/microservice-c/Dockerfile
+          push: true
+          tags: marcelocollyer/microservice-c:${{ env.TAG_NAME }}
+    
