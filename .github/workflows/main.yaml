@@ -2,8 +2,6 @@ name: Docker Build and Push
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-*'
@@ -24,53 +22,40 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Extract tag name
-        run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/} | sed 's/refs\/heads\///')" >> $GITHUB_ENV
+        run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_ENV
 
-      - name: Build and push Docker image for microservice-a
-        uses: docker/build-push-action@v2
-        with:
-          context: ./microservices/microservice-a
-          file: ./microservices/microservice-a/Dockerfile
-          push: true
-          tags: marcelocollyer/microservice-a:${{ env.TAG_NAME }}
-
-      - name: Build and push Docker image for microservice-b
-        uses: docker/build-push-action@v2
-        with:
-          context: ./microservices/microservice-b
-          file: ./microservices/microservice-b/Dockerfile
-          push: true
-          tags: marcelocollyer/microservice-b:${{ env.TAG_NAME }}
-
-      - name: Build and push Docker image for microservice-c
-        uses: docker/build-push-action@v2
-        with:
-          context: ./microservices/microservice-c
-          file: ./microservices/microservice-c/Dockerfile
-          push: true
-          tags: marcelocollyer/microservice-c:${{ env.TAG_NAME }}
+      - name: Build and push Docker images
+        run: |
+          docker build -t marcelocollyer/microservice-a:${{ env.TAG_NAME }} ./microservices/microservice-a
+          docker push marcelocollyer/microservice-a:${{ env.TAG_NAME }}
+          docker build -t marcelocollyer/microservice-b:${{ env.TAG_NAME }} ./microservices/microservice-b
+          docker push marcelocollyer/microservice-b:${{ env.TAG_NAME }}
+          docker build -t marcelocollyer/microservice-c:${{ env.TAG_NAME }} ./microservices/microservice-c
+          docker push marcelocollyer/microservice-c:${{ env.TAG_NAME }}
 
       - name: Checkout the infrastructure repo
         uses: actions/checkout@v2
         with:
           repository: 'marcelocollyer/infrastructure-k8s'
           token: ${{ secrets.GH_TOKEN }}
-  
-      - name: Update values.yaml with the new tag
+          path: 'infrastructure'
+
+      - name: Update image tags in Rollout files
         run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          echo "Updating image tag to $TAG_NAME in values.yaml"
-          sed -i "s/tag: \".*\"/tag: \"$TAG_NAME\"/" ./apps/values.yaml
+          sed -i "s|marcelocollyer/microservice-a:__TAG__|marcelocollyer/microservice-a:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
+          sed -i "s|marcelocollyer/microservice-b:__TAG__|marcelocollyer/microservice-b:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
+          sed -i "s|marcelocollyer/microservice-c:__TAG__|marcelocollyer/microservice-c:${{ env.TAG_NAME }}|" ./apps/rollout.yaml
   
       - name: Commit and push changes
         run: |
+          cd infrastructure
           git config --global user.email "marcelocollyer@gmail.com"
           git config --global user.name "GitHub Actions"
-          git add ./apps/values.yaml
-          git commit -m "Update Helm values to $TAG_NAME"
+          git add .
+          git commit -m "Update rollout files to use new image tags: ${{ env.TAG_NAME }}"
           git push origin HEAD:main
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
-  
+          git tag ${{ env.TAG_NAME }}
+          git push origin ${{ env.TAG_NAME }}
+
       - name: Verify changes
-        run: cat ./apps/values.yaml
+        run: cat ./infrastructure/*.yaml
