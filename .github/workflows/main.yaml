@@ -1,16 +1,17 @@
 name: Docker Build and Push
 
 on:
-    push:
-      branches:
-        - main
-      tags:
-        - 'v[0-9]+.[0-9]+.[0-9]+'
-        - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  push:
+    branches:
+      - main
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
     
     steps:
       - name: Check out the repo
@@ -23,7 +24,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Extract tag name
-        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/} | sed 's/refs\/heads\///')" >> $GITHUB_ENV
 
       - name: Build and push Docker image for microservice-a
         uses: docker/build-push-action@v2
@@ -48,4 +49,3 @@ jobs:
           file: ./microservices/microservice-c/Dockerfile
           push: true
           tags: marcelocollyer/microservice-c:${{ env.TAG_NAME }}
-    
