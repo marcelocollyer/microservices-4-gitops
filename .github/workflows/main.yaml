@@ -49,3 +49,28 @@ jobs:
           file: ./microservices/microservice-c/Dockerfile
           push: true
           tags: marcelocollyer/microservice-c:${{ env.TAG_NAME }}
+
+      - name: Checkout the infrastructure repo
+        uses: actions/checkout@v2
+        with:
+          repository: 'marcelocollyer/infrastructure-k8s'
+          token: ${{ secrets.GH_TOKEN }}
+  
+      - name: Update values.yaml with the new tag
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "Updating image tag to $TAG_NAME in values.yaml"
+          sed -i "s/tag: \".*\"/tag: \"$TAG_NAME\"/" ./apps/values.yaml
+  
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "marcelocollyer@gmail.com"
+          git config --global user.name "GitHub Actions"
+          git add ./apps/values.yaml
+          git commit -m "Update Helm values to $TAG_NAME"
+          git push origin HEAD:main
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+  
+      - name: Verify changes
+        run: cat ./apps/values.yaml
